@@ -17,6 +17,11 @@ CODEX_NAME_MAP = {
 }
 
 
+def clean_codex(name: str) -> str:
+    import re
+    return re.sub(r'\s*\(часть\s+\d+\)\s*', '', name).strip()
+
+
 def normalize_codex_name(raw: str) -> str:
     raw = raw.strip()
     if raw in CODEX_NAME_MAP:
@@ -122,12 +127,13 @@ def main():
             chunks = chunk_text(article_text)
 
             for ci, chunk in enumerate(chunks):
+                codex_clean = clean_codex(codex)
                 chunk_id = f"s{section_idx}_{codex.replace(' ', '_')}_{article_num.replace(' ', '_')}_{ci}"
                 if chunk_id in seen_ids:
                     continue
                 seen_ids.add(chunk_id)
                 meta = {
-                    "codex": codex,
+                    "codex": codex_clean,
                     "article": article_num,
                     "section": section_name,
                     "chunk_index": ci,
