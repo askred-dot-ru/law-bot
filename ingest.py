@@ -96,6 +96,7 @@ def main():
     all_embeddings = []
     all_documents = []
     all_metadatas = []
+    seen_ids = set()
     section_idx = 0
 
     for section in sections:
@@ -122,6 +123,9 @@ def main():
 
             for ci, chunk in enumerate(chunks):
                 chunk_id = f"s{section_idx}_{codex.replace(' ', '_')}_{article_num.replace(' ', '_')}_{ci}"
+                if chunk_id in seen_ids:
+                    continue
+                seen_ids.add(chunk_id)
                 meta = {
                     "codex": codex,
                     "article": article_num,
