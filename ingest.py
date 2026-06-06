@@ -19,6 +19,8 @@ CODEX_NAME_MAP = {
 
 def normalize_codex_name(raw: str) -> str:
     raw = raw.strip()
+    if raw in CODEX_NAME_MAP:
+        return CODEX_NAME_MAP[raw]
     if "гражданск" in raw.lower():
         return "Гражданский кодекс РФ"
     if "уголовн" in raw.lower():
@@ -27,7 +29,7 @@ def normalize_codex_name(raw: str) -> str:
         return "Семейный кодекс РФ"
     if "налогов" in raw.lower():
         return "Налоговый кодекс РФ"
-    return CODEX_NAME_MAP.get(raw, raw)
+    return raw
 
 
 def find_articles(text: str) -> list[tuple[str, str, str]]:
@@ -94,6 +96,7 @@ def main():
     all_embeddings = []
     all_documents = []
     all_metadatas = []
+    section_idx = 0
 
     for section in sections:
         section = section.strip()
@@ -105,6 +108,7 @@ def main():
             continue
         raw_name = header_match.group(1)
         codex = normalize_codex_name(raw_name)
+        section_idx += 1
         print(f"\nProcessing: {codex}")
 
         articles = find_articles(section)
@@ -117,7 +121,7 @@ def main():
             chunks = chunk_text(article_text)
 
             for ci, chunk in enumerate(chunks):
-                chunk_id = f"{codex.replace(' ', '_')}_{article_num.replace(' ', '_')}_{ci}"
+                chunk_id = f"s{section_idx}_{codex.replace(' ', '_')}_{article_num.replace(' ', '_')}_{ci}"
                 meta = {
                     "codex": codex,
                     "article": article_num,
