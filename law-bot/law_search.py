@@ -102,17 +102,23 @@ def get_article(codex: str, article: str) -> dict | None:
 
 def list_codexes() -> list[dict]:
     collection = _get_collection()
-    results = collection.get(include=["metadatas"])
-
     codex_counts = {}
     codex_sections = {}
-    for meta in results["metadatas"]:
-        c = meta.get("codex", "Неизвестно")
-        if c not in codex_counts:
-            codex_counts[c] = set()
-            codex_sections[c] = set()
-        codex_counts[c].add(meta.get("article", ""))
-        codex_sections[c].add(meta.get("section", ""))
+
+    offset = 0
+    batch_size = 1000
+    while True:
+        results = collection.get(include=["metadatas"], limit=batch_size, offset=offset)
+        if not results["ids"]:
+            break
+        for meta in results["metadatas"]:
+            c = meta.get("codex", "Неизвестно")
+            if c not in codex_counts:
+                codex_counts[c] = set()
+                codex_sections[c] = set()
+            codex_counts[c].add(meta.get("article", ""))
+            codex_sections[c].add(meta.get("section", ""))
+        offset += batch_size
 
     return [
         {
