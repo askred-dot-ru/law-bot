@@ -14,7 +14,7 @@ cp "$SCRIPT_DIR/system-prompt.md" "$DEPLOY_DIR/"
 cp "$SCRIPT_DIR/requirements.txt" "$DEPLOY_DIR/"
 cp "$SCRIPT_DIR/Dockerfile" "$DEPLOY_DIR/"
 cp "$SCRIPT_DIR/entrypoint.sh" "$DEPLOY_DIR/"
-cp "$SCRIPT_DIR/../output.md" "$DEPLOY_DIR/"
+cp "$SCRIPT_DIR/output.md" "$DEPLOY_DIR/"
 
 export PATH="$HOME/.npm-global/bin:$PATH"
 export RAILWAY_API_TOKEN="a5bea384-f730-4ce1-8eee-94ab05204338"
