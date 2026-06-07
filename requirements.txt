@@ -1,6 +1,0 @@
-python-telegram-bot[webhooks]>=22.0
-psycopg2-binary>=2.9
-httpx>=0.27
-chromadb>=0.5
-sentence-transformers>=3.0
-fastmcp>=2.0
