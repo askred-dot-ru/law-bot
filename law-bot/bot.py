@@ -2,7 +2,7 @@
 import json, os, logging, asyncio, re
 import urllib.request, urllib.error
 
-from telegram import Update
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 VERSION = "v1-law-bot"
@@ -234,6 +234,16 @@ def call_chat(messages):
         return result["choices"][0]["message"]["content"]
 
 
+# ─── Keyboard ────────────────────────────────────────────────────
+
+def get_keyboard():
+    return ReplyKeyboardMarkup(
+        [[KeyboardButton("🗑 Очистить"), KeyboardButton("📚 Документы")]],
+        resize_keyboard=True,
+        one_time_keyboard=False,
+    )
+
+
 # ─── Handlers ─────────────────────────────────────────────────────
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -244,13 +254,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_message(chat_id, "system", load_system_prompt())
     await update.message.reply_text(
         "⚖️ Добро пожаловать в LawBot — юридический консультант по законодательству РФ!\n\n"
-        "Я помогаю разобраться в Гражданском, Уголовном, Семейном и Налоговом кодексах.\n\n"
-        "Команды:\n"
-        "/clear — начать диалог заново\n"
-        "/help — справка\n"
-        "/codexes — список доступных кодексов\n"
-        "/article ГК 1 — текст конкретной статьи\n\n"
-        "Задавай любой юридический вопрос!"
+        "Задайте любой юридический вопрос — я найду релевантные нормы и отвечу.\n\n"
+        "Кнопки внизу:\n"
+        "🗑 Очистить — начать диалог заново\n"
+        "📚 Документы — список нормативных документов в базе",
+        reply_markup=get_keyboard(),
     )
 
 
@@ -258,7 +266,7 @@ async def clear_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     clear_history(chat_id)
     save_message(chat_id, "system", load_system_prompt())
-    await update.message.reply_text("✅ История диалога очищена.")
+    await update.message.reply_text("✅ История диалога очищена.", reply_markup=get_keyboard())
 
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -337,6 +345,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not user_text:
         return
 
+    if user_text == "🗑 Очистить":
+        clear_history(chat_id)
+        save_message(chat_id, "system", load_system_prompt())
+        await update.message.reply_text("✅ История диалога очищена.", reply_markup=get_keyboard())
+        return
+
+    if user_text == "📚 Документы":
+        try:
+            result = law_search.list_codexes()
+        except Exception as e:
+            await update.message.reply_text(f"❌ Ошибка: {e}", reply_markup=get_keyboard())
+            return
+        if not result:
+            await update.message.reply_text("Документы не найдены.", reply_markup=get_keyboard())
+            return
+        lines = ["📚 Нормативные документы в базе:\n"]
+        for c in result:
+            lines.append(f"• {c['codex']}")
+        text = "\n".join(lines)
+        if len(text) > 4000:
+            text = text[:4000] + "\n\n... (список сокращён)"
+        await update.message.reply_text(text, reply_markup=get_keyboard())
+        return
+
     db_upsert_user(chat_id, username, first_name)
 
     law_context = build_law_context(user_text)
@@ -364,7 +396,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_message(chat_id, "user", user_text, username, first_name)
     save_message(chat_id, "assistant", response)
 
-    await update.message.reply_text(format_telegram(response), parse_mode="HTML")
+    await update.message.reply_text(format_telegram(response), parse_mode="HTML", reply_markup=get_keyboard())
 
 
 def main():
